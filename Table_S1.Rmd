@@ -1,0 +1,59 @@
+---
+title: "Table_1"
+author: "Glade Bogar"
+date: "2024-07-11"
+output: html_document
+---
+
+### Calculate and generate Table 1 - Xanthan Precipitation.
+
+#load required packages:
+```{r}
+library(tidyverse)
+packageVersion('tidyverse')
+```
+
+#load required data:
+```{r}
+drydown2_eps <- read_csv("EPS_Method_Manuscript_Data/drydown2_eps_ug_glu_g_soil_copy.csv")
+drydown2_experiment_data_subset <- read_csv("EPS_Method_Manuscript_Data/drydown2_experiment_data_subset_copy.csv")
+```
+
+#join experimental factors to eps data:
+```{r}
+drydown2_eps <- left_join(drydown2_eps, drydown2_experiment_data_subset)
+```
+
+#pre-process:
+```{r}
+drydown2_eps <- drop_na(drydown2_eps) #remove NAs (extraction blanks)
+drydown2_eps_subset <- select(drydown2_eps, MIS_ID, Assay, EPS_ug_glu_g_soil, treatment_code, inoculation) #subset variables
+```
+
+#select only xanthan:
+```{r}
+drydown2_xanthan <- filter(drydown2_eps_subset, treatment_code %in% c("D2_03","D2_04"))
+```
+
+#pivot longer by sample ID, Extraction Method:
+```{r}
+drydown2_xanthan_spread <- spread(drydown2_xanthan, Assay, EPS_ug_glu_g_soil)
+```
+
+#calculate precipitation efficiency:
+```{r}
+drydown2_xanthan_spread <- mutate(drydown2_xanthan_spread, precipitate_recovery_percent = (Precipitate/Extract)*100)
+```
+
+#calculate absolute precipitation loss:
+```{r}
+drydown2_xanthan_spread <- mutate(drydown2_xanthan_spread, precipitate_loss = Extract - Precipitate)
+```
+
+#export table:
+```{r}
+write_csv(drydown2_xanthan_spread, "Figures_Tables/Table_S1.csv")
+```
+
+### end of document
+

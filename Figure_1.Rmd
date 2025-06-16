@@ -1,0 +1,285 @@
+---
+title: "EPS_Method_Manuscript_Analyses_Figure_1"
+author: "Glade Bogar"
+date: "2024-07-11"
+output: html_document
+---
+
+### Calculate and generate Figure 1 - Canonical Standard Curve.
+
+#set working directory: setwd("~/Desktop/Data_Code_for_EPSmethod")
+
+#load required packages:
+```{r}
+library(tidyverse)
+packageVersion('tidyverse')
+```
+
+#load required data:
+```{r}
+std_curve <- read_csv("EPS_Method_Manuscript_Data/EPS_std_curve_tidy.csv")
+```
+
+#calculate averages of duplicate cuvette readings, analytical duplicates:
+```{r}
+std_curve <- mutate(std_curve, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+
+std_curve <- select(std_curve, SampleID, Standard, ABS) #discard unneeded columns
+
+standards <- unique(select(std_curve, SampleID, Standard)) #get list of standard category, per sample
+
+std_curve <- std_curve %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+std_curve <- left_join(std_curve, standards, by = "SampleID") #join standard category to average absorbance per sample
+```
+
+#Find theoretic detection limit: is blank different that standard #1 (~0.9 ug/mL)?
+```{r}
+blanks <- filter(std_curve, Standard =="Blank")
+std_1 <- filter(std_curve, Standard =="S1")
+
+t.test(blanks$ABS, std_1$ABS)
+```
+
+#std #1 is not different.
+
+#Find detection limit: is blank different that standard #2 (~2.7 ug/mL)?
+```{r}
+blanks <- filter(std_curve, Standard =="Blank")
+std_2 <- filter(std_curve, Standard =="S2")
+
+t.test(blanks$ABS, std_2$ABS)
+```
+
+#std #2 is distinct, so the detection limit is between 0.9 and 2.7 ug/mL glucose equivalent.
+
+##calculate statistics for each level of the curve:
+
+#Blank:
+```{r}
+blanks <- filter(std_curve, Standard == "Blank")
+
+blanks_low <- min(blanks$ABS)
+blanks_low
+saveRDS(blanks_low, "Results/blanks_low.rds")
+
+blanks_high <- max(blanks$ABS)
+blanks_high
+saveRDS(blanks_high, "Results/blanks_high.rds")
+
+blanks_range <- blanks_high - blanks_low
+blanks_range
+saveRDS(blanks_range, "Results/blanks_range.rds")
+
+blanks_avg <- mean(blanks$ABS)
+blanks_avg
+saveRDS(blanks_avg, "Results/blanks_avg.rds")
+```
+
+#std 1:
+```{r}
+std_1 <- filter(std_curve, Standard == "S1")
+
+std_1_low <- min(std_1$ABS)
+std_1_low
+saveRDS(std_1_low, "Results/std_1_low.rds")
+
+std_1_high <- max(std_1$ABS)
+std_1_high
+saveRDS(std_1_high, "Results/std_1_high.rds")
+
+std_1_range <- std_1_high - std_1_low
+std_1_range
+saveRDS(std_1_range, "Results/std_1_range.rds")
+
+std_1_avg <- mean(std_1$ABS)
+std_1_avg
+saveRDS(std_1_avg, "Results/std_1_avg.rds")
+```
+
+#std 2:
+```{r}
+std_2 <- filter(std_curve, Standard == "S2")
+
+std_2_low <- min(std_2$ABS)
+std_2_low
+saveRDS(std_2_low, "Results/std_2_low.rds")
+
+std_2_high <- max(std_2$ABS)
+std_2_high
+saveRDS(std_2_high, "Results/std_2_high.rds")
+
+std_2_range <- std_2_high - std_2_low
+std_2_range
+saveRDS(std_2_range, "Results/std_2_range.rds")
+
+std_2_avg <- mean(std_2$ABS)
+std_2_avg
+saveRDS(std_2_avg, "Results/std_2_avg.rds")
+```
+
+#std 3:
+```{r}
+std_3 <- filter(std_curve, Standard == "S3")
+
+std_3_low <- min(std_3$ABS)
+std_3_low
+saveRDS(std_3_low, "Results/std_3_low.rds")
+
+std_3_high <- max(std_3$ABS)
+std_3_high
+saveRDS(std_3_high, "Results/std_3_high.rds")
+
+std_3_range <- std_3_high - std_3_low
+std_3_range
+saveRDS(std_3_range, "Results/std_3_range.rds")
+
+std_3_avg <- mean(std_3$ABS)
+std_3_avg
+saveRDS(std_3_avg, "Results/std_3_avg.rds")
+```
+
+#std 4:
+```{r}
+std_4 <- filter(std_curve, Standard == "S4")
+
+std_4_low <- min(std_4$ABS)
+std_4_low
+saveRDS(std_4_low, "Results/std_4_low.rds")
+
+std_4_high <- max(std_4$ABS)
+std_4_high
+saveRDS(std_4_high, "Results/std_4_high.rds")
+
+std_4_range <- std_4_high - std_4_low
+std_4_range
+saveRDS(std_4_range, "Results/std_4_range.rds")
+
+std_4_avg <- mean(std_4$ABS)
+std_4_avg
+saveRDS(std_4_avg, "Results/std_4_avg.rds")
+```
+
+#std 5:
+```{r}
+std_5 <- filter(std_curve, Standard == "S5")
+
+std_5_low <- min(std_5$ABS)
+std_5_low
+saveRDS(std_5_low, "Results/std_5_low.rds")
+
+std_5_high <- max(std_5$ABS)
+std_5_high
+saveRDS(std_5_high, "Results/std_5_high.rds")
+
+std_5_range <- std_5_high - std_5_low
+std_5_range
+saveRDS(std_5_range, "Results/std_5_range.rds")
+
+std_5_avg <- mean(std_5$ABS)
+std_5_avg
+saveRDS(std_5_avg, "Results/std_5_avg.rds")
+```
+
+#We measured both blank and Std #5 values for every quantification set. To detect drift (either from an incomplete reaction or contaminated tubes) we should designate thresholds for both of these. If a sample fails both thresholds in the same direction, then the samples could be corrected prior to EPS calculation.
+
+##ABS quality control:
+
+#Blank:
+```{r}
+blanks_05_percentile <- quantile(blanks$ABS, 0.05) #05th Percentile
+blanks_05_percentile
+saveRDS(blanks_05_percentile, "Results/blanks_05_percentile.rds")
+
+blanks_95_percentile <- quantile(blanks$ABS, 0.95) #95th Percentile
+blanks_95_percentile
+saveRDS(blanks_95_percentile, "Results/blanks_95_percentile.rds")
+```
+
+#Std 5:
+```{r}
+std_5_05_percentile <- quantile(std_5$ABS, 0.05) #05th Percentile
+std_5_05_percentile
+saveRDS(std_5_05_percentile, "Results/std_5_05_percentile.rds")
+
+std_5_95_percentile <- quantile(std_5$ABS, 0.95) #95th Percentile
+std_5_95_percentile
+saveRDS(std_5_95_percentile, "Results/std_5_95_percentile.rds")
+```
+
+#Append standard values:
+```{r}
+blanks$glu_ug_mL <- "0"
+std_1$glu_ug_mL <- "0.89"
+std_2$glu_ug_mL <- "2.69"
+std_3$glu_ug_mL <- "5.37"
+std_4$glu_ug_mL <- "26.87"
+std_5$glu_ug_mL <- "80.69"
+```
+
+#recombine standards to create full curve:
+```{r}
+std_curve <- rbind(blanks,
+                   std_1,
+                   std_2,
+                   std_3,
+                   std_4,
+                   std_5)
+
+std_curve$glu_ug_mL <- as.numeric(std_curve$glu_ug_mL) #code as numbers
+```
+
+#plot std curve:
+```{r}
+EPS_scatter <- ggplot(std_curve, aes(x = glu_ug_mL, y = ABS)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  labs(x = "ug glucose/mL", y = "Absorbance") +
+  theme_classic() +
+  theme(text = element_text(size = 14))
+
+EPS_scatter
+
+#print:
+pdf(file = "Figures_Tables/Figure_1.pdf",
+    width = 5, # The width of the plot in inches
+    height = 3) # The height of the plot in inches
+print(EPS_scatter)
+dev.off()
+```
+
+#calculate canonical standard curve slope and intercept:
+```{r}
+std_curve_model <- lm(std_curve$ABS ~ std_curve$glu_ug_mL)
+
+summary(std_curve_model)
+
+std_curve_model_coef <- coef(std_curve_model)
+
+std_curve_intercept <- std_curve_model_coef[1] #extract intercept
+std_curve_intercept
+saveRDS(std_curve_intercept, "Results/std_curve_intercept.rds")
+
+std_curve_slope <- std_curve_model_coef[2] #extract slope
+std_curve_slope
+saveRDS(std_curve_slope, "Results/std_curve_slope.rds")
+```
+
+### end of document.
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,678 @@
+---
+title: "Figure_2"
+author: "Glade Bogar"
+date: "2024-07-12"
+output: html_document
+---
+
+### Calculate and generate Figure 2 - %C vs EPS Correlation
+
+#set working directory: setwd("~/Desktop/Data_Code_for_EPSmethod")
+
+## Load packages:
+```{r}
+library(tidyverse)
+packageVersion('tidyverse')
+```
+
+## Load Data:
+
+#Import tidy individual SH1 datasheets:
+```{r}
+datasheet_36 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_36_tidy.csv")
+datasheet_37 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_37_tidy.csv")
+datasheet_38 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_38_tidy.csv")
+datasheet_39 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_39_tidy.csv")
+datasheet_40 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_40_tidy.csv")
+datasheet_41 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_41_tidy.csv")
+datasheet_42 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_42_tidy.csv")
+datasheet_43 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_43_tidy.csv")
+datasheet_44 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_44_tidy.csv")
+```
+
+##Before joining for EPS calculation, perform quality control on individual sets.
+
+#rbind all passing datasets, correct non-passing datasets before rbinding.
+
+#load Blank, Std #5 high/Low benchmarks
+```{r}
+Blank_High <- readRDS("Results/blanks_95_percentile.rds")
+Blank_Low <- readRDS("Results/blanks_05_percentile.rds")
+
+Std5_High <- readRDS("Results/std_5_95_percentile.rds")
+Std5_Low <- readRDS("Results/std_5_05_percentile.rds")
+```
+
+
+#36, Blank:
+```{r}
+datasheet_36_blank <- filter(datasheet_36, SampleID == "Blank")
+datasheet_36_blank <- mutate(datasheet_36_blank, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_36_blank <- datasheet_36_blank %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_36_blank <- datasheet_36_blank$ABS #isolate blank value
+datasheet_36_blank > Blank_Low 
+datasheet_36_blank < Blank_High
+```
+#Blank is low.
+
+#36, #5:
+```{r}
+datasheet_36_5 <- filter(datasheet_36, SampleID == "#5")
+datasheet_36_5 <- mutate(datasheet_36_5, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_36_5 <- datasheet_36_5 %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_36_5 <- datasheet_36_5$ABS #isolate blank value
+datasheet_36_5 > Std5_Low 
+datasheet_36_5 < Std5_High
+```
+#Standard 5 is OK.
+
+## For now, we are treating high values as needing correction, while low values are not. There is evidence in datasheet #44 that tube contamination can explain high blank and std#5 values. If BOTH these are high, then correction is needed, and if not, then correction is not needed.
+
+#append dataset:
+```{r}
+SH1_EPS <- datasheet_36
+```
+
+#37, Blank:
+```{r}
+datasheet_37_blank <- filter(datasheet_37, SampleID == "Blank")
+datasheet_37_blank <- mutate(datasheet_37_blank, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_37_blank <- datasheet_37_blank %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_37_blank <- datasheet_37_blank$ABS #isolate blank value
+datasheet_37_blank > Blank_Low 
+datasheet_37_blank < Blank_High
+```
+#Blank is OK.
+
+#37, #5:
+```{r}
+datasheet_37_5 <- filter(datasheet_37, SampleID == "#5")
+datasheet_37_5 <- mutate(datasheet_37_5, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_37_5 <- datasheet_37_5 %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_37_5 <- datasheet_37_5$ABS #isolate blank value
+datasheet_37_5 > Std5_Low 
+datasheet_37_5 < Std5_High
+```
+#Standard 5 is high.
+
+#only 1/2 failed, appending:
+```{r}
+SH1_EPS <- rbind(SH1_EPS, datasheet_37)
+```
+
+#38, Blank:
+```{r}
+datasheet_38_blank <- filter(datasheet_38, SampleID == "Blank")
+datasheet_38_blank <- mutate(datasheet_38_blank, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_38_blank <- datasheet_38_blank %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_38_blank <- datasheet_38_blank$ABS #isolate blank value
+datasheet_38_blank > Blank_Low 
+datasheet_38_blank < Blank_High
+```
+#Blank is high.
+
+#38, #5:
+```{r}
+datasheet_38_5 <- filter(datasheet_38, SampleID == "#5")
+datasheet_38_5 <- mutate(datasheet_38_5, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_38_5 <- datasheet_38_5 %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_38_5 <- datasheet_38_5$ABS #isolate blank value
+datasheet_38_5 > Std5_Low 
+datasheet_38_5 < Std5_High
+```
+#Standard 5 is high.
+
+#2/2 failed, correct before append:
+```{r}
+datasheet_38_pigment <- filter(datasheet_38, Assay == "Pigment") #split pigment and assay
+datasheet_38_quantification <- filter(datasheet_38, Assay == "Extract")
+
+corrfactor <- (((datasheet_38_blank - Blank_High) + (datasheet_38_5 - Std5_High))/2) #correction factor is average of both blank and #5 over 95th percentile for these standards.
+
+datasheet_38_quantification$Abs1 <- (datasheet_38_quantification$Abs1 - corrfactor) #subtract correction factor from all Abs values
+datasheet_38_quantification$Abs2 <- (datasheet_38_quantification$Abs2 - corrfactor)
+```
+
+#re-test #38, Blank:
+```{r}
+datasheet_38_blank <- filter(datasheet_38_quantification, SampleID == "Blank")
+datasheet_38_blank <- mutate(datasheet_38_blank, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_38_blank <- datasheet_38_blank %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_38_blank <- datasheet_38_blank$ABS #isolate blank value
+datasheet_38_blank > Blank_Low 
+datasheet_38_blank < Blank_High
+```
+
+#Blank is OK.
+
+#re-test #38, #5:
+```{r}
+datasheet_38_5 <- filter(datasheet_38_quantification, SampleID == "#5")
+datasheet_38_5 <- mutate(datasheet_38_5, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_38_5 <- datasheet_38_5 %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_38_5 <- datasheet_38_5$ABS #isolate blank value
+datasheet_38_5 > Std5_Low 
+datasheet_38_5 < Std5_High
+```
+#Standard 5 is high.
+
+#only 1/2 failed, appending:
+```{r}
+datasheet_38 <- rbind(datasheet_38_pigment, datasheet_38_quantification)
+
+SH1_EPS <- rbind(SH1_EPS, datasheet_38)
+```
+
+#39, Blank:
+```{r}
+datasheet_39_blank <- filter(datasheet_39, SampleID == "Blank")
+datasheet_39_blank <- mutate(datasheet_39_blank, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_39_blank <- datasheet_39_blank %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_39_blank <- datasheet_39_blank$ABS #isolate blank value
+datasheet_39_blank > Blank_Low 
+datasheet_39_blank < Blank_High
+```
+#Blank is OK.
+
+#39, #5:
+```{r}
+datasheet_39_5 <- filter(datasheet_39, SampleID == "#5")
+datasheet_39_5 <- mutate(datasheet_39_5, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_39_5 <- datasheet_39_5 %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_39_5 <- datasheet_39_5$ABS #isolate blank value
+datasheet_39_5 > Std5_Low 
+datasheet_39_5 < Std5_High
+```
+#Standard 5 is high.
+
+#only 1/2 failed, appending:
+```{r}
+SH1_EPS <- rbind(SH1_EPS, datasheet_39)
+```
+
+#40, Blank:
+```{r}
+datasheet_40_blank <- filter(datasheet_40, SampleID == "Blank")
+datasheet_40_blank <- mutate(datasheet_40_blank, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_40_blank <- datasheet_40_blank %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_40_blank <- datasheet_40_blank$ABS #isolate blank value
+datasheet_40_blank > Blank_Low 
+datasheet_40_blank < Blank_High
+```
+#Blank is OK.
+
+#40, #5:
+```{r}
+datasheet_40_5 <- filter(datasheet_40, SampleID == "#5")
+datasheet_40_5 <- mutate(datasheet_40_5, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_40_5 <- datasheet_40_5 %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_40_5 <- datasheet_40_5$ABS #isolate blank value
+datasheet_40_5 > Std5_Low 
+datasheet_40_5 < Std5_High
+```
+#Standard 5 is OK.
+
+#0/2 failed, appending:
+```{r}
+SH1_EPS <- rbind(SH1_EPS, datasheet_40)
+```
+
+#41, Blank:
+```{r}
+datasheet_41_blank <- filter(datasheet_41, SampleID == "Blank")
+datasheet_41_blank <- mutate(datasheet_41_blank, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_41_blank <- datasheet_41_blank %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_41_blank <- datasheet_41_blank$ABS #isolate blank value
+datasheet_41_blank > Blank_Low 
+datasheet_41_blank < Blank_High
+```
+#Blank is OK.
+
+#41, #5:
+```{r}
+datasheet_41_5 <- filter(datasheet_41, SampleID == "#5")
+datasheet_41_5 <- mutate(datasheet_41_5, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_41_5 <- datasheet_41_5 %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_41_5 <- datasheet_41_5$ABS #isolate blank value
+datasheet_41_5 > Std5_Low 
+datasheet_41_5 < Std5_High
+```
+#Standard 5 is ok.
+
+#0/2 failed, appending:
+```{r}
+SH1_EPS <- rbind(SH1_EPS, datasheet_41)
+```
+
+#42, Blank:
+```{r}
+datasheet_42_blank <- filter(datasheet_42, SampleID == "Blank")
+datasheet_42_blank <- mutate(datasheet_42_blank, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_42_blank <- datasheet_42_blank %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_42_blank <- datasheet_42_blank$ABS #isolate blank value
+datasheet_42_blank > Blank_Low 
+datasheet_42_blank < Blank_High
+```
+#Blank is OK.
+
+#42, #5:
+```{r}
+datasheet_42_5 <- filter(datasheet_42, SampleID == "#5")
+datasheet_42_5 <- mutate(datasheet_42_5, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_42_5 <- datasheet_42_5 %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_42_5 <- datasheet_42_5$ABS #isolate blank value
+datasheet_42_5 > Std5_Low 
+datasheet_42_5 < Std5_High
+```
+#Standard 5 is OK.
+
+#0/2 failed, appending:
+```{r}
+SH1_EPS <- rbind(SH1_EPS, datasheet_42)
+```
+
+#43, Blank:
+```{r}
+datasheet_43_blank <- filter(datasheet_43, SampleID == "Blank")
+datasheet_43_blank <- mutate(datasheet_43_blank, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_43_blank <- datasheet_43_blank %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_43_blank <- datasheet_43_blank$ABS #isolate blank value
+datasheet_43_blank > Blank_Low 
+datasheet_43_blank < Blank_High
+```
+#Blank is OK.
+
+#43, #5:
+```{r}
+datasheet_43_5 <- filter(datasheet_43, SampleID == "#5")
+datasheet_43_5 <- mutate(datasheet_43_5, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_43_5 <- datasheet_43_5 %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_43_5 <- datasheet_43_5$ABS #isolate blank value
+datasheet_43_5 > Std5_Low 
+datasheet_43_5 < Std5_High
+```
+#Standard 5 is OK.
+
+#0/2 failed, appending:
+```{r}
+SH1_EPS <- rbind(SH1_EPS, datasheet_43)
+```
+
+#44, Blank:
+```{r}
+datasheet_44_blank <- filter(datasheet_44, SampleID == "Blank")
+datasheet_44_blank <- mutate(datasheet_44_blank, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_44_blank <- datasheet_44_blank %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_44_blank <- datasheet_44_blank$ABS #isolate blank value
+datasheet_44_blank > Blank_Low 
+datasheet_44_blank < Blank_High
+```
+#Blank is high.
+
+#44, #5:
+```{r}
+datasheet_44_5 <- filter(datasheet_44, SampleID == "#5")
+datasheet_44_5 <- mutate(datasheet_44_5, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_44_5 <- datasheet_44_5 %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_44_5 <- datasheet_44_5$ABS #isolate blank value
+datasheet_44_5 > Std5_Low 
+datasheet_44_5 < Std5_High
+```
+#Standard 5 is high.
+
+#2/2 failed, correct before append:
+#note - spoecial circumstances here. Read note on Datasheet#44 scan (2023_07_27) - all samples here except SH1_60, SH1_85, SH1_86 were done with much older tubes, while those three were done with tubes from a bag opened that day. So, the artificially-high values reflected in the blank and std#5 here apply to all samples besides these.
+```{r}
+datasheet_44_pigment <- filter(datasheet_44, Assay == "Pigment") #split pigment and assay, assay by correction status
+datasheet_44_quantification <- filter(datasheet_44, Assay == "Extract")
+
+datasheet_44_quantification_a <- filter(datasheet_44_quantification, SampleID != "SH1_060")
+datasheet_44_quantification_a <- filter(datasheet_44_quantification_a, SampleID != "SH1_085")
+datasheet_44_quantification_a <- filter(datasheet_44_quantification_a, SampleID != "SH1_086")
+
+datasheet_44_quantification_b1 <- filter(datasheet_44_quantification, SampleID == "SH1_060")
+datasheet_44_quantification_b2 <- filter(datasheet_44_quantification, SampleID == "SH1_085")
+datasheet_44_quantification_b3 <- filter(datasheet_44_quantification, SampleID == "SH1_086")
+datasheet_44_quantification_b <- rbind(datasheet_44_quantification_b1, datasheet_44_quantification_b2, datasheet_44_quantification_b3)
+
+corrfactor <- (((datasheet_44_blank - Blank_High) + (datasheet_44_5 - Std5_High))/2) #correction factor is average of both blank and #5 over 95th percentile for these standards.
+
+datasheet_44_quantification_a$Abs1 <- (datasheet_44_quantification_a$Abs1 - corrfactor) #subtract correction factor from all Abs values
+datasheet_44_quantification_a$Abs2 <- (datasheet_44_quantification_a$Abs2 - corrfactor)
+```
+
+#re-test #44, Blank:
+```{r}
+datasheet_44_blank <- filter(datasheet_44_quantification_a, SampleID == "Blank")
+datasheet_44_blank <- mutate(datasheet_44_blank, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_44_blank <- datasheet_44_blank %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_44_blank <- datasheet_44_blank$ABS #isolate blank value
+datasheet_44_blank > Blank_Low 
+datasheet_44_blank < Blank_High
+```
+
+#Blank is still high.
+
+#re-test #44, #5:
+```{r}
+datasheet_44_5 <- filter(datasheet_44_quantification_a, SampleID == "#5")
+datasheet_44_5 <- mutate(datasheet_44_5, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+datasheet_44_5 <- datasheet_44_5 %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+datasheet_44_5 <- datasheet_44_5$ABS #isolate blank value
+datasheet_44_5 > Std5_Low 
+datasheet_44_5 < Std5_High
+```
+#Standard 5 is ok.
+
+#only 1/2 failed, appending:
+```{r}
+datasheet_44 <- rbind(datasheet_44_pigment, datasheet_44_quantification_a, datasheet_44_quantification_b)
+
+SH1_EPS <- rbind(SH1_EPS, datasheet_44)
+```
+
+## calculate EPS from Abs, correct for pigment.
+
+#Import .csv file, 10x duplicated cuvettes with 700 uL 1x PBS only, for pigment correction:
+```{r}
+PBS_only <- read_csv("EPS_Method_Manuscript_Data/EPS_pbs_std_tidy.csv")
+```
+
+#PBS-only blanks are very close to each other; summarize to a single value for corrections:
+```{r}
+PBS_only <- mutate(PBS_only, ABS = (Abs1+ABS2)/2) #get average of same cuvette read twice
+
+PBS_only <- PBS_only %>% #Average duplicates A+B per sample
+  group_by(Standard) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+PBS_only <- PBS_only$ABS #summarize to a single number
+```
+
+#select pigments, coerce to numeric:
+```{r}
+EPS_data_pigment <- filter(SH1_EPS, Assay == "Pigment")
+EPS_data_pigment$Abs1 <- as.numeric(EPS_data_pigment$Abs1)
+EPS_data_pigment$Abs2 <- as.numeric(EPS_data_pigment$Abs2)
+```
+
+#calculate and rename ABS:
+```{r}
+EPS_data_pigment <- mutate(EPS_data_pigment, ABS_pigment = (Abs1 + Abs2)/2)
+```
+
+#Remove PBS-only absorbance:
+```{r}
+EPS_data_pigment <- mutate(EPS_data_pigment, ABS_pigment = ABS_pigment - PBS_only)
+```
+
+#Select needed variables only:
+```{r}
+EPS_data_pigment <- select(EPS_data_pigment, SampleID, ABS_pigment)
+```
+
+##Extract-only manipulation:
+
+#select extracts, remove blanks, standards, outliers, coerce to numeric:
+```{r}
+EPS_data_extracts <- filter(SH1_EPS, Assay == "Extract")
+
+EPS_data_extracts <- filter(EPS_data_extracts, SampleID != "Blank")
+EPS_data_extracts <- filter(EPS_data_extracts, SampleID != "#5")
+
+EPS_data_extracts <- EPS_data_extracts %>%  filter(!row_number() %in% c(59))
+#position 59 unaccountably high, maybe contaminated?
+
+EPS_data_extracts$Abs1 <- as.numeric(EPS_data_extracts$Abs1)
+EPS_data_extracts$Abs2 <- as.numeric(EPS_data_extracts$Abs2)
+```
+
+#calculate and rename ABS:
+```{r}
+EPS_data_extracts <- mutate(EPS_data_extracts, ABS_extract = (Abs1 + Abs2)/2)
+```
+
+#average duplicates:
+```{r}
+EPS_data_extracts_avg <- EPS_data_extracts %>%
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS_extract),
+               list(ABS_extract_avg = mean))
+
+EPS_data_extracts <- left_join(EPS_data_extracts, EPS_data_extracts_avg, by = "SampleID")
+
+EPS_data_extracts <- select(EPS_data_extracts, SampleID, ABS_extract_avg)
+EPS_data_extracts <- unique(EPS_data_extracts)
+```
+
+##recombine pigment and extract:
+```{r}
+EPS_data_calculation <- left_join(EPS_data_pigment, EPS_data_extracts_avg)
+```
+
+#subtract pigment ABS and blank ABS from extract ABS to get final corrected ABS:
+```{r}
+EPS_data_calculation <- mutate(EPS_data_calculation, ABS = ABS_extract_avg - ABS_pigment)
+EPS_data_calculation <- select(EPS_data_calculation, SampleID, ABS)
+```
+
+##calculate final glucose concentrations with canonical standard curve:
+```{r}
+intercept <- read_rds("Results/std_curve_intercept.rds")
+slope <- read_rds("Results/std_curve_slope.rds")
+
+EPS_data_calculation <- mutate(EPS_data_calculation, glu_ug_mL = (ABS - intercept)/slope)
+```
+
+#Final numbers need to be corrected for the actual extraction mass, soil moisture.
+
+#rename variable for join:
+```{r}
+SH1_quantified_EPS <- rename(EPS_data_calculation, SH1_ID = SampleID)
+```
+
+#import SH1 metadata - sample mass and moisture:
+```{r}
+SH1_sample_mass <- read_csv("EPS_Method_Manuscript_Data/SH1_sample_mass_moisture.csv")
+```
+
+#join datasets:
+```{r}
+SH1_quantified_EPS <- left_join(SH1_sample_mass, SH1_quantified_EPS)
+```
+
+#check extraction blanks:
+```{r}
+SH1_quantified_EPS_blanks <- filter(SH1_quantified_EPS, Notes == "extraction blank")
+SH1_quantified_EPS_blanks
+write_csv(SH1_quantified_EPS_blanks, "Results/SH1_EPS_Extraction_Blank_Values.csv")
+```
+#note that while the final two blanks have uniform low values, the first three do not. These are high, in the context of the rest of the rest of the results - should be noted for the results. Values as high as 46 ug/g soil might be equivalent to a blank value. That should also be apparent in the error propagation step later.
+
+#remove samples without soil samples - blanks and missing samples:
+```{r}
+SH1_quantified_EPS <- filter(SH1_quantified_EPS, PerCMoisture != "NA")
+```
+
+#Calculate oven dry soil mass equivalent:
+```{r}
+SH1_quantified_EPS <- mutate(SH1_quantified_EPS, soilmassOD = FM_Soil_Mass_g - (FM_Soil_Mass_g*(PerCMoisture/100)))
+```
+
+#Correct EPS for moisture:
+```{r}
+SH1_quantified_EPS <- mutate(SH1_quantified_EPS, glu_g_OD = glu_ug_mL/soilmassOD)
+```
+
+#Correct EPS for extraction volume (6 mL):
+```{r}
+SH1_quantified_EPS <- mutate(SH1_quantified_EPS, EPS_ug_glu_g_soil = glu_g_OD * 6)
+```
+
+#Evaluate duplicates:
+```{r}
+SH1_quantified_EPS_duplicates <- filter(SH1_quantified_EPS, Notes == "analytical duplicate")
+SH1_quantified_EPS_duplicates
+write_csv(SH1_quantified_EPS_duplicates, "Results/SH1_EPS_Analytical_Duplicate_Values.csv")
+```
+
+#some of these are fine, some are not - we have two that are within 3 ug of each other, two that are 30 ug off, and one that's just about 60 off - 50% error. Bad enough to be mentioned in the methods for the reader to evaluate - if our results are overwhelmingly clear then this is a subnote, if they hang on a few samples we should seriously consider the validity.
+
+#as long as we have the duplicates, take their average as the final value for those samples:
+```{r}
+SH1_quantified_EPS <- SH1_quantified_EPS %>%
+  group_by(CNH2_ID_Field) %>%
+  summarise_at(vars(EPS_ug_glu_g_soil),
+               list(EPS_ug_glu_g_soil = mean))
+```
+
+#select final:
+```{r}
+SH1_quantified_EPS <- filter(SH1_quantified_EPS, EPS_ug_glu_g_soil > 0)
+```
+
+#load, join, filter %C data:
+```{r}
+SH1_CperC <- read_csv("EPS_Method_Manuscript_Data/SH1_CperC.csv")
+SH1_quantified_EPS <- rename(SH1_quantified_EPS, SH1_ID = "CNH2_ID_Field")
+SH1_quantified_EPS <- left_join(SH1_quantified_EPS, SH1_CperC)
+SH1_quantified_EPS <- filter(SH1_quantified_EPS, C_PerC > 0)
+```
+
+#plot %C vs EPS:
+```{r}
+EPS_scatter <- ggplot(SH1_quantified_EPS, aes(x = C_PerC, y = EPS_ug_glu_g_soil)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  labs(x = "Total Soil Carbon (%)", y = "Soil EPS (ug glucose/g soil)") +
+  theme_classic() +
+  theme(text = element_text(size = 12))
+
+EPS_scatter
+
+#print:
+pdf(file = "Figures_Tables/Figure_2.pdf",
+    width = 5, # The width of the plot in inches
+    height = 3) # The height of the plot in inches
+print(EPS_scatter)
+dev.off()
+```
+
+#statistics:
+```{r}
+model <- lm(SH1_quantified_EPS$EPS_ug_glu_g_soil ~ SH1_quantified_EPS$C_PerC)
+
+coef <- coef(model)
+
+summary(model)
+```
+
+### end of document
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
