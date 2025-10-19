@@ -1,0 +1,149 @@
+---
+title: "compare_glucose_curves"
+author: "Glade Bogar"
+date: "2025-10-01"
+output: html_document
+---
+
+# Compare EPS quantification method glucose std curves
+
+## load required packages:
+```{r}
+library(tidyverse)
+library(ggpmisc)
+library(grid) 
+```
+
+## load required data:
+```{r}
+dubois_glucose <- read_csv("dubois_glucose_data.csv")
+taylor_glucose <- read_csv("taylor_glucose_data.csv")
+rasouli_glucose <- read_csv("rasouli_glucose_data.csv")
+bogar_glucose <- read_csv("bogar_std_curve.csv")
+```
+
+## convert all to ug glucose/mL original soln:
+
+## dubois; original protocol ug glucose/2 mL:
+```{r}
+dubois_glucose <- mutate(dubois_glucose, ug_mL_glu = ug_glu/2)
+dubois_glucose$method <- c("Dubois et al., 1956")
+dubois_glucose <- select(dubois_glucose, ug_mL_glu, Abs, method)
+```
+
+## taylor; original in mM:
+```{r}
+taylor_glucose <- mutate(taylor_glucose, ug_mL_glu = mM_glu * 180.16)
+taylor_glucose$method <- c("Taylor, 1995")
+taylor_glucose <- select(taylor_glucose, ug_mL_glu, Abs, method)
+```
+
+## rasouli, original ug glucose/100 uL:
+```{r}
+rasouli_glucose <- mutate(rasouli_glucose, ug_mL_glu = ug_glu * 10)
+rasouli_glucose$method <- c("Rasouli et al., 2014")
+rasouli_glucose <- select(rasouli_glucose, ug_mL_glu, Abs, method)
+```
+
+## bogar:
+```{r}
+bogar_glucose$method <- c("This Method")
+```
+
+## concatenate "Large volume" methods:
+```{r}
+largevolume <- bind_rows(dubois_glucose, taylor_glucose)
+```
+
+## add label:
+```{r}
+largevolume$scale <- c("Large Volume")
+```
+
+#concatenate "Microscale" methods:
+```{r}
+microscale <- bind_rows(rasouli_glucose, bogar_glucose)
+```
+
+## add label:
+```{r}
+microscale$scale <- c("Microscale")
+```
+
+## concatenate methods:
+```{r}
+all_stds <- bind_rows(largevolume, microscale)
+```
+
+## plot regression lines:
+```{r}
+#filter subset
+all_stds_under50 <- all_stds %>%
+  filter(ug_mL_glu < 110, Abs < 1.5)
+
+#compute regression equations (without R²) for each method
+eq_data <- all_stds %>%
+  group_by(method) %>%
+  do({
+    fit <- lm(Abs ~ ug_mL_glu, data = .)
+    a <- coef(fit)[1]
+    b <- coef(fit)[2]
+    eq <- paste0("y = ", format(a, digits = 3), " + ", format(b, digits = 3), "x")
+    data.frame(eq = eq)
+  }) %>%
+  ungroup()
+
+#qssign y positions for labels
+eq_data$label.y <- seq(1.35, 1.1, length.out = nrow(eq_data))
+eq_x_pos <- 50  
+
+#plot subset data with regression equations from full data
+all_stds_under50_plot <- ggplot(all_stds_under50, aes(x = ug_mL_glu, y = Abs, 
+                                                      color = method, linetype = scale)) +
+  geom_point(alpha = 0.6, size = 4) +
+  geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
+  geom_text(
+    data = eq_data,
+    aes(x = eq_x_pos, y = label.y, label = eq, color = method),
+    hjust = 0,
+    size = 5,
+    inherit.aes = FALSE
+  ) +
+  labs(
+    x = "µg glucose/mL",
+    y = "Absorbance",
+    color = "Quantification Method",
+    linetype = "Reaction Scale"
+  ) +
+  scale_linetype_manual(
+    values = c("Large Volume" = "solid", "Microscale" = "dotted"),
+    labels = c("Large Volume" = "Large Volume", "Microscale" = "Microscale")
+  ) +
+
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.title = element_text(size = 13, face = "bold"),
+    legend.text  = element_text(size = 11),
+    axis.title   = element_text(size = 13, face = "bold"),
+    axis.text    = element_text(size = 11),
+    plot.title   = element_text(size = 16, face = "bold", hjust = 0.5),
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 1)
+  )
+
+#final plot
+all_stds_under50_plot
+```
+
+#export plot:
+```{r}
+pdf(file = "Figure_1.pdf",
+    width = 7.5, # The width of the plot in inches
+    height = 5) # The height of the plot in inches
+print(all_stds_under50_plot)
+dev.off()
+```
+
+
+
+
+

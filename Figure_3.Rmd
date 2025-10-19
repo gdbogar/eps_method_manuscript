@@ -1,0 +1,994 @@
+---
+title: "Figure_3"
+author: "Glade Bogar"
+date: "2024-07-12"
+output: html_document
+---
+
+### Calculate and generate Figure 3 - Extract vs. Precipitate EPS
+
+#set working directory: setwd("~/Desktop/Data_Code_for_EPSmethod")
+
+#load required packages:
+```{r}
+library(tidyverse)
+packageVersion('tidyverse')
+```
+
+#load relevant data:
+```{r}
+GH1_precipitate_01 <- read_csv("EPS_Method_Manuscript_Data/GH1_Precipitate01.csv")
+GH1_precipitate_02 <- read_csv("EPS_Method_Manuscript_Data/GH1_Precipitate_02.csv")
+GH1_precipitate_03 <- read_csv("EPS_Method_Manuscript_Data/GH1_Precipitate03.csv")
+EPS_std_curve_2024_04_04 <- read_csv("EPS_Method_Manuscript_Data/EPS_std_curve_2024_04_04.csv")
+Drydown2_01_extract <- read_csv("EPS_Method_Manuscript_Data/Drydown2_01_extract.csv")
+Drydown2_01_precipitate <- read_csv("EPS_Method_Manuscript_Data/Drydown2_01_precipitate.csv")
+Drydown2_02_extract <- read_csv("EPS_Method_Manuscript_Data/Drydown2_02_extract.csv")
+Drydown2_02_precipitate <- read_csv("EPS_Method_Manuscript_Data/Drydown2_02_precipitate.csv")
+Drydown2_03_extract <- read_csv("EPS_Method_Manuscript_Data/Drydown2_03_extract.csv")
+Drydown2_03_precipitate <- read_csv("EPS_Method_Manuscript_Data/Drydown2_03_precipitate.csv")
+Drydown2_04_extract <- read_csv("EPS_Method_Manuscript_Data/Drydown2_04_extract.csv")
+Drydown2_04_precipitate <- read_csv("EPS_Method_Manuscript_Data/Drydown2_04_precipitate.csv")
+Drydown2_05_extract <- read_csv("EPS_Method_Manuscript_Data/Drydown2_05_extract.csv")
+Drydown2_05_precipitate <- read_csv("EPS_Method_Manuscript_Data/Drydown2_05_precipitate.csv")
+Drydown2_06_extract <- read_csv("EPS_Method_Manuscript_Data/Drydown2_06_extract.csv")
+Drydown2_06_precipitate <- read_csv("EPS_Method_Manuscript_Data/Drydown2_06_precipitate.csv")
+```
+
+#we have three standard curves that apply to these data.
+
+#The first (previous canonical std curve - old acid/old tubes) applies literally only to eight samples; Blank, #5, blank_drydown2_01, MIS_183 (A+B) from Drydown2_01_extract.
+
+#Since we're only trying to compare the GH1 precipitated values to the extract values, we don't need this one.
+
+#The second (old acid/new tubes) applies to the remaining samples from Drydown2_01_extract, as well as Drydown2_01_precipitate, Drydown2_02_extract, and Drydown2_02_precipitate.
+
+#we don't need any of these samples either.
+
+#The third (new acid/new tubes) applies to all other samples. We do need this one, but we never did a full standard curve; what we do have is every blank and high standard from every other assay.
+
+#So we need to calculate a standard curve by compiling these and then calculating a standard curve.
+
+#As previously, we will average A and B values (treating these as analytical duplicates).
+
+#we don't need dilution factors for now:
+```{r}
+GH1_precipitate_03 <- select(GH1_precipitate_03, -Dilution_Factor)
+Drydown2_03_precipitate <- select(Drydown2_03_precipitate, -dilution_factor)
+Drydown2_04_precipitate <- select(Drydown2_04_precipitate, -dilution_factor)
+Drydown2_05_precipitate <- select(Drydown2_05_precipitate, -dilution_factor)
+Drydown2_06_precipitate <- select(Drydown2_06_precipitate, -dilution_factor)
+```
+
+#Filter, add sample names to standards:
+```{r}
+blank_01 <- rename(Drydown2_03_extract, Sample_ID = "Sample ID")
+blank_01 <- filter(blank_01, Sample_ID == "Blank")
+blank_01$sample_name <- "B01"
+
+blank_02 <- rename(Drydown2_03_precipitate, Sample_ID = "Sample ID")
+blank_02 <- filter(blank_02, Sample_ID == "Blank")
+blank_02$sample_name <- "B02"
+
+blank_03 <- rename(Drydown2_04_extract, Sample_ID = "Sample ID")
+blank_03 <- filter(blank_03, Sample_ID == "Blank")
+blank_03$sample_name <- "B03"
+
+blank_04 <- rename(Drydown2_04_precipitate, Sample_ID = "Sample ID")
+blank_04 <- filter(blank_04, Sample_ID == "Blank")
+blank_04$sample_name <- "B04"
+
+blank_05 <- rename(Drydown2_05_extract, Sample_ID = "Sample ID")
+blank_05 <- filter(blank_05, Sample_ID == "Blank")
+blank_05$sample_name <- "B05"
+
+blank_06 <- rename(Drydown2_05_precipitate, Sample_ID = "Sample ID")
+blank_06 <- filter(blank_06, Sample_ID == "Blank")
+blank_06$sample_name <- "B06"
+
+blank_07 <- rename(Drydown2_06_extract, Sample_ID = "Sample ID")
+blank_07 <- filter(blank_07, Sample_ID == "Blank")
+blank_07$sample_name <- "B07"
+blank_07$`ABS-1` <- as.numeric(blank_07$`ABS-1`)
+blank_07$`ABS-2` <- as.numeric(blank_07$`ABS-2`)
+
+blank_08 <- rename(Drydown2_06_precipitate, Sample_ID = "Sample ID")
+blank_08 <- filter(blank_08, Sample_ID == "Blank")
+blank_08$sample_name <- "B08"
+
+blank_09 <- rename(GH1_precipitate_01, Sample_ID = "Sample ID")
+blank_09 <- filter(blank_09, Sample_ID == "Blank")
+blank_09$sample_name <- "B09"
+
+blank_10 <- rename(GH1_precipitate_02, Sample_ID = "Sample ID")
+blank_10 <- filter(blank_10, Sample_ID == "Blank")
+blank_10$sample_name <- "B10"
+
+blank_11 <- rename(GH1_precipitate_03, Sample_ID = "Sample ID")
+blank_11 <- filter(blank_11, Sample_ID == "Blank")
+blank_11$sample_name <- "B11"
+
+
+
+high_01 <- rename(Drydown2_03_extract, Sample_ID = "Sample ID")
+high_01 <- filter(high_01, Sample_ID == "#5")
+high_01$sample_name <- "H01"
+
+high_02 <- rename(Drydown2_03_precipitate, Sample_ID = "Sample ID")
+high_02 <- filter(high_02, Sample_ID == "#5")
+high_02$sample_name <- "H02"
+
+high_03 <- rename(Drydown2_04_extract, Sample_ID = "Sample ID")
+high_03 <- filter(high_03, Sample_ID == "#5")
+high_03$sample_name <- "H03"
+
+high_04 <- rename(Drydown2_04_precipitate, Sample_ID = "Sample ID")
+high_04 <- filter(high_04, Sample_ID == "#5")
+high_04$sample_name <- "H04"
+
+high_05 <- rename(Drydown2_05_extract, Sample_ID = "Sample ID")
+high_05 <- filter(high_05, Sample_ID == "#5")
+high_05$sample_name <- "H05"
+
+high_06 <- rename(Drydown2_05_precipitate, Sample_ID = "Sample ID")
+high_06 <- filter(high_06, Sample_ID == "#5")
+high_06$sample_name <- "H06"
+
+high_07 <- rename(Drydown2_06_extract, Sample_ID = "Sample ID")
+high_07 <- filter(high_07, Sample_ID == "#5")
+high_07$sample_name <- "H07"
+high_07$`ABS-1` <- as.numeric(high_07$`ABS-1`)
+high_07$`ABS-2` <- as.numeric(high_07$`ABS-2`)
+
+high_08 <- rename(Drydown2_06_precipitate, Sample_ID = "Sample ID")
+high_08 <- filter(high_08, Sample_ID == "#5")
+high_08$sample_name <- "H08"
+
+high_09 <- rename(GH1_precipitate_01, Sample_ID = "Sample ID")
+high_09 <- filter(high_09, Sample_ID == "#5")
+high_09$sample_name <- "H09"
+
+high_10 <- rename(GH1_precipitate_02, Sample_ID = "Sample ID")
+high_10 <- filter(high_10, Sample_ID == "#5")
+high_10$sample_name <- "H10"
+
+high_11 <- rename(GH1_precipitate_03, Sample_ID = "Sample ID")
+high_11 <- filter(high_11, Sample_ID == "#5")
+high_11$sample_name <- "H11"
+```
+
+#combine blanks:
+```{r}
+allblanks <- bind_rows(blank_01,
+                       blank_02,
+                       blank_03,
+                       blank_04,
+                       blank_05,
+                       blank_06,
+                       blank_07,
+                       blank_08,
+                       blank_09,
+                       blank_10,
+                       blank_11)
+```
+
+#add glu_ug_mL:
+```{r}
+allblanks$glu_ug_mL <- "0"
+```
+
+#combine high stds:
+```{r}
+allhighs <- bind_rows(high_01,
+                       high_02,
+                       high_03,
+                       high_04,
+                       high_05,
+                       high_06,
+                       high_07,
+                       high_08,
+                       high_09,
+                       high_10,
+                       high_11)
+```
+
+#add glu_ug_mL:
+```{r}
+allhighs$glu_ug_mL <- "90"
+```
+
+#combine, rename, analyze:
+```{r}
+std_curve <- bind_rows(allblanks, allhighs)
+
+std_curve <- rename(std_curve, Abs1 = "ABS-1")
+std_curve <- rename(std_curve, Abs2 = "ABS-2")
+
+std_curve$glu_ug_mL <- as.numeric(std_curve$glu_ug_mL) #code as numbers
+
+std_curve <- mutate(std_curve, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+
+standards <- unique(select(std_curve, Sample_ID, sample_name, glu_ug_mL)) #get list of standard category, per sample
+
+std_curve <- std_curve %>% #Average duplicates A+B per sample
+  group_by(sample_name) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+std_curve <- left_join(std_curve, standards, by = "sample_name") #join standard category to average absorbance per sample
+```
+
+#We measured both blank and Std #5 values for every quantification set. To detect drift (either from an incomplete reaction or contaminated tubes) we should designate thresholds for both of these. If a sample fails both thresholds in the same direction, then the samples coould be corrected prior to EPS calculation.
+
+#designate:
+```{r}
+blanks <- filter(std_curve, Sample_ID == "Blank")
+std_5 <- filter(std_curve, Sample_ID == "#5")
+```
+
+##ABS quality control:
+
+#Blank:
+```{r}
+blanks_05_percentile <- quantile(blanks$ABS, 0.05) #05th Percentile
+blanks_05_percentile
+saveRDS(blanks_05_percentile, "Results/blanks_05_percentile_2024_04_19.rds")
+
+blanks_95_percentile <- quantile(blanks$ABS, 0.95) #95th Percentile
+blanks_95_percentile
+saveRDS(blanks_95_percentile, "Results/blanks_95_percentile_2024_04_19.rds")
+```
+
+#Std 5:
+```{r}
+std_5_05_percentile <- quantile(std_5$ABS, 0.05) #05th Percentile
+std_5_05_percentile
+saveRDS(std_5_05_percentile, "Results/std_5_05_percentile_2024_04_19.rds")
+
+std_5_95_percentile <- quantile(std_5$ABS, 0.95) #95th Percentile
+std_5_95_percentile
+saveRDS(std_5_95_percentile, "Results/std_5_95_percentile_2024_04_19.rds")
+```
+
+#plot std curve:
+```{r}
+EPS_scatter <- ggplot(std_curve, aes(x = glu_ug_mL, y = ABS)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  theme_classic()
+
+EPS_scatter
+
+#print:
+pdf(file = "Results/EPS_std_curve.pdf",
+    width = 5, # The width of the plot in inches
+    height = 3) # The height of the plot in inches
+print(EPS_scatter)
+dev.off()
+```
+
+#calculate standard curve slope and intercept:
+```{r}
+std_curve_model <- lm(std_curve$ABS ~ std_curve$glu_ug_mL)
+
+summary(std_curve_model)
+
+std_curve_model_coef <- coef(std_curve_model)
+
+std_curve_intercept <- std_curve_model_coef[1] #extract intercept
+std_curve_intercept
+saveRDS(std_curve_intercept, "Results/std_curve_intercept.rds")
+
+std_curve_slope <- std_curve_model_coef[2] #extract slope
+std_curve_slope
+saveRDS(std_curve_slope, "Results/std_curve_slope.rds")
+```
+
+#move on to quantification of the GH1 precipitates.
+
+#re-load the GH1 extract datasets:
+```{r}
+GH1_precipitate_01 <- read_csv("EPS_Method_Manuscript_Data/GH1_Precipitate01.csv")
+GH1_precipitate_02 <- read_csv("EPS_Method_Manuscript_Data/GH1_Precipitate_02.csv")
+GH1_precipitate_03 <- read_csv("EPS_Method_Manuscript_Data/GH1_Precipitate03.csv")
+```
+
+#tidy individual datasets.
+
+#GH1_precipitate_01:
+```{r}
+GH1_precipitate_01 <- rename(GH1_precipitate_01, SampleID = "Sample ID")
+GH1_precipitate_01 <- rename(GH1_precipitate_01, Dup = "Dup.")
+GH1_precipitate_01 <- rename(GH1_precipitate_01, Abs1 = "ABS-1")
+GH1_precipitate_01 <- rename(GH1_precipitate_01, Abs2 = "ABS-2")
+
+GH1_precipitate_01$Dilution_Factor <- "1"
+GH1_precipitate_01$Dilution_Factor <- as.numeric(GH1_precipitate_01$Dilution_Factor)
+
+GH1_precipitate_01 <- filter(GH1_precipitate_01, Abs1 > 0)
+```
+
+#GH1_precipitate_02:
+```{r}
+GH1_precipitate_02 <- rename(GH1_precipitate_02, SampleID = "Sample ID")
+GH1_precipitate_02 <- rename(GH1_precipitate_02, Dup = "Dup.")
+GH1_precipitate_02 <- rename(GH1_precipitate_02, Abs1 = "ABS-1")
+GH1_precipitate_02 <- rename(GH1_precipitate_02, Abs2 = "ABS-2")
+
+GH1_precipitate_02$Dilution_Factor <- "1"
+GH1_precipitate_02$Dilution_Factor <- as.numeric(GH1_precipitate_02$Dilution_Factor)
+
+GH1_precipitate_02 <- filter(GH1_precipitate_02, Abs1 > 0)
+```
+
+#GH1_precipitate_03:
+```{r}
+GH1_precipitate_03 <- rename(GH1_precipitate_03, SampleID = "Sample ID")
+GH1_precipitate_03 <- rename(GH1_precipitate_03, Dup = "Dup.")
+GH1_precipitate_03 <- rename(GH1_precipitate_03, Abs1 = "ABS-1")
+GH1_precipitate_03 <- rename(GH1_precipitate_03, Abs2 = "ABS-2")
+
+GH1_precipitate_03 <- filter(GH1_precipitate_03, Abs1 > 0)
+```
+
+#Before joining for EPS calculation, perform quality control on individual sets, as was done previously.
+
+#rbind all passing datasets, correct non-passing datasets before rbinding.
+
+#load Blank, Std #5 high/Low benchmarks
+```{r}
+Blank_High <- blanks_95_percentile
+Blank_Low <- blanks_05_percentile
+
+Std5_High <- std_5_95_percentile
+Std5_Low <- std_5_05_percentile
+```
+
+#GH1_precipitate_01, Blank:
+```{r}
+GH1_precipitate_01_blank <- filter(GH1_precipitate_01, SampleID == "Blank")
+GH1_precipitate_01_blank <- mutate(GH1_precipitate_01_blank, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+GH1_precipitate_01_blank <- GH1_precipitate_01_blank %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+GH1_precipitate_01_blank <- GH1_precipitate_01_blank$ABS #isolate blank value
+GH1_precipitate_01_blank > Blank_Low 
+GH1_precipitate_01_blank < Blank_High
+```
+#Blank is OK.
+
+#GH1_precipitate_01, #5:
+```{r}
+GH1_precipitate_01_5 <- filter(GH1_precipitate_01, SampleID == "#5")
+GH1_precipitate_01_5 <- mutate(GH1_precipitate_01_5, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+GH1_precipitate_01_5 <- GH1_precipitate_01_5 %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+GH1_precipitate_01_5 <- GH1_precipitate_01_5$ABS #isolate #5 value
+GH1_precipitate_01_5 > Std5_Low 
+GH1_precipitate_01_5 < Std5_High
+```
+#Standard 5 is OK.
+
+#0/2 are high, appending:
+```{r}
+GH1_EPS_test <- GH1_precipitate_01
+```
+
+#GH1_precipitate_02, Blank:
+```{r}
+GH1_precipitate_02_blank <- filter(GH1_precipitate_02, SampleID == "Blank")
+GH1_precipitate_02_blank <- mutate(GH1_precipitate_02_blank, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+GH1_precipitate_02_blank <- GH1_precipitate_02_blank %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+GH1_precipitate_02_blank <- GH1_precipitate_02_blank$ABS #isolate blank value
+GH1_precipitate_02_blank > Blank_Low 
+GH1_precipitate_02_blank < Blank_High
+```
+#Blank is ok
+
+#GH1_precipitate_02, #5:
+```{r}
+GH1_precipitate_02_5 <- filter(GH1_precipitate_02, SampleID == "#5")
+GH1_precipitate_02_5 <- mutate(GH1_precipitate_02_5, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+GH1_precipitate_02_5 <- GH1_precipitate_02_5 %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+GH1_precipitate_02_5 <- GH1_precipitate_02_5$ABS #isolate #5 value
+GH1_precipitate_02_5 > Std5_Low 
+GH1_precipitate_02_5 < Std5_High
+```
+#Standard 5 is high.
+
+#1/2 are high, appending:
+```{r}
+GH1_EPS_test <- rbind(GH1_EPS_test, GH1_precipitate_02)
+```
+
+#GH1_precipitate_03, Blank:
+```{r}
+GH1_precipitate_03_blank <- filter(GH1_precipitate_03, SampleID == "Blank")
+GH1_precipitate_03_blank <- mutate(GH1_precipitate_03_blank, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+GH1_precipitate_03_blank <- GH1_precipitate_03_blank %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+GH1_precipitate_03_blank <- GH1_precipitate_03_blank$ABS #isolate blank value
+GH1_precipitate_03_blank > Blank_Low 
+GH1_precipitate_03_blank < Blank_High
+```
+#Blank is ok
+
+#GH1_precipitate_03, #5:
+```{r}
+GH1_precipitate_03_5 <- filter(GH1_precipitate_03, SampleID == "#5")
+GH1_precipitate_03_5 <- mutate(GH1_precipitate_03_5, ABS = (Abs1+Abs2)/2) #get average of same cuvette read twice
+GH1_precipitate_03_5 <- GH1_precipitate_03_5 %>% #Average duplicates A+B per sample
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS),
+               list(ABS = mean))
+
+GH1_precipitate_03_5 <- GH1_precipitate_03_5$ABS #isolate #5 value
+GH1_precipitate_03_5 > Std5_Low 
+GH1_precipitate_03_5 < Std5_High
+```
+#Standard 5 is ok.
+
+#0/2 are high, appending:
+```{r}
+GH1_EPS_test <- rbind(GH1_EPS_test, GH1_precipitate_03)
+```
+
+#check the pigment correction in precipitates.
+
+#unfortunately, did not have enough extracted solution left to do precipitated pigment on all of these; really hoping that the pigment will come to exactly 4x the extract pigment. Should be the case; precipitation solution was clear after pelleting and pellet was darkly colored.
+
+#Import .csv file, 10x duplicated cuvettes with 700 uL 1x PBS only, for pigment correction:
+```{r}
+PBS_only <- read_csv("EPS_Method_Manuscript_Data/EPS_pbs_std_tidy.csv")
+```
+#Now, this is very interesting; this is very slightly higher than the PBS-only controls we ran for the precipitate pigment test, which was 0.041, 0.043, 0.043, 0.044. Will have to use two different corrections.
+
+#Define these:
+```{r}
+PBS_avg_extract <- as.numeric("0.048")
+PBS_avg_precipitate <- as.numeric("0.04275")
+```
+
+#Precipitate values:
+
+#separate out the precipitated pigments:
+```{r}
+pigment_precipitate <- filter(GH1_EPS_test, Assay == "Pigment")
+```
+
+#calculate and rename ABS:
+```{r}
+pigment_precipitate <- mutate(pigment_precipitate, ABS_pigment = (Abs1 + Abs2)/2)
+```
+
+#Remove PBS-only absorbance:
+```{r}
+pigment_precipitate <- mutate(pigment_precipitate, ABS_pigment = ABS_pigment - PBS_avg_precipitate)
+```
+
+#Select needed variables only:
+```{r}
+pigment_precipitate <- select(pigment_precipitate, SampleID, ABS_pigment)
+```
+
+#rename for comparison:
+```{r}
+pigment_precipitate <- rename(pigment_precipitate, ABS_pigment_precipitate = ABS_pigment)
+```
+
+#Extract values:
+
+#import extract data:
+```{r}
+datasheet_24 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_24_tidy.csv")
+datasheet_25 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_25_tidy.csv")
+datasheet_26 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_26_tidy.csv")
+datasheet_27 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_27_tidy.csv")
+datasheet_28 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_28_tidy.csv")
+datasheet_29 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_29_tidy.csv")
+datasheet_30 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_30_tidy.csv")
+datasheet_31 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_31_tidy.csv")
+datasheet_32 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_32_tidy.csv")
+datasheet_33 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_33_tidy.csv")
+datasheet_34 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_34_tidy.csv")
+datasheet_35 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_35_tidy.csv")
+datasheet_36 <- read_csv("EPS_Method_Manuscript_Data/EPS_dataset_36_tidy.csv")
+```
+
+#join:
+```{r}
+datasheet_26$Abs1 <- as.numeric(datasheet_26$Abs1)
+datasheet_26$Abs2 <- as.numeric(datasheet_26$Abs2)
+
+GH1_Extracts <- bind_rows(datasheet_24,
+                          datasheet_25,
+                          datasheet_26,
+                          datasheet_27,
+                          datasheet_28,
+                          datasheet_29,
+                          datasheet_30,
+                          datasheet_31,
+                          datasheet_32,
+                          datasheet_33,
+                          datasheet_34,
+                          datasheet_35,
+                          datasheet_36)
+```
+
+#separate out the extract pigments:
+```{r}
+pigment_extract <- filter(GH1_Extracts, Assay == "Pigment")
+```
+
+#calculate and rename ABS:
+```{r}
+pigment_extract <- mutate(pigment_extract, ABS_pigment_extract = (Abs1 + Abs2)/2)
+```
+
+#Remove PBS-only absorbance:
+```{r}
+pigment_extract <- mutate(pigment_extract, ABS_pigment_extract = ABS_pigment_extract - PBS_avg_extract)
+```
+
+#Select needed variables only:
+```{r}
+pigment_extract <- select(pigment_extract, SampleID, ABS_pigment_extract)
+```
+
+#join to precipitate:
+```{r}
+pigment_precipitate_test <- left_join(pigment_precipitate, pigment_extract, by = "SampleID")
+```
+
+#look at pigment factor:
+```{r}
+pigment_precipitate_test <- mutate(pigment_precipitate_test, precipitation_factor = ABS_pigment_precipitate/ABS_pigment_extract)
+```
+
+#we can see that the factor is as low as 1.5; as high as about 3.5.
+
+#not perfect, and in fact, may not be comparable for samples for which there is no pigment correction.
+
+#proceed for now with only those samples for which there is the pigment correction on both precipitate and extracts.
+
+#If that answer is clear with those few samples then we can stop; otherwise we could return and quantify more.
+
+#select 'extract' (as opposed to pigment) samples that match pigment IDs:
+```{r}
+extract_only <- filter(GH1_EPS_test, Assay == "Extract")
+
+extract_only_samples <- pigment_precipitate_test$SampleID
+
+extract_only <- filter(extract_only, SampleID %in% extract_only_samples)
+```
+
+#calculate and rename ABS:
+```{r}
+extract_only <- mutate(extract_only, ABS_extract = (Abs1 + Abs2)/2)
+```
+
+#average duplicates:
+```{r}
+extract_only_avg <- extract_only %>%
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS_extract),
+               list(ABS_extract_avg = mean))
+
+extract_only <- left_join(extract_only, extract_only_avg, by = "SampleID")
+
+extract_only <- select(extract_only, SampleID, ABS_extract_avg) #above steps only necessary when preserving other columns besides these
+extract_only <- unique(extract_only)
+```
+
+#recombine pigment and extract:
+```{r}
+EPS_data_calculation <- left_join(pigment_precipitate, extract_only)
+```
+
+#add dilution factors - needed to correct for pigment:
+```{r}
+selected_dilution_factors <- select(GH1_EPS_test, SampleID, Dilution_Factor)
+selected_dilution_factors <- unique(selected_dilution_factors)
+
+EPS_data_calculation <- left_join(EPS_data_calculation, selected_dilution_factors, by = "SampleID")
+```
+
+#remove some error duplicates from re-tests:
+```{r}
+test_correction_1 <- filter(EPS_data_calculation, Dilution_Factor < 1)
+test_correction_2 <- filter(EPS_data_calculation, Dilution_Factor == 1)
+
+test_correction_2 <- filter(test_correction_2, SampleID != "GH1_007")
+test_correction_2 <- filter(test_correction_2, SampleID != "GH1_016")
+test_correction_2 <- filter(test_correction_2, SampleID != "GH1_125")
+
+EPS_data_calculation <- bind_rows(test_correction_1, test_correction_2)
+```
+
+#correct pigment for dilution factor:
+```{r}
+EPS_data_calculation <- mutate(EPS_data_calculation, diluted_pigment = ABS_pigment_precipitate * Dilution_Factor )
+```
+
+#subtract pigment ABS from extract ABS to get final corrected ABS:
+```{r}
+EPS_data_calculation <- mutate(EPS_data_calculation, ABS = ABS_extract_avg - diluted_pigment)
+EPS_data_calculation <- select(EPS_data_calculation, SampleID, ABS, Dilution_Factor)
+```
+
+#calculate final glucose concentrations with coreect standard curve fpr these samples:
+```{r}
+intercept <- read_rds("Results/std_curve_intercept.rds")
+slope <- read_rds("Results/std_curve_slope.rds")
+
+EPS_data_calculation <- mutate(EPS_data_calculation, glu_ug_mL = (ABS - intercept)/slope)
+```
+
+#Final numbers need to be corrected for the actual extraction mass, soil moisture.
+
+#Export:
+```{r}
+write_csv(EPS_data_calculation, "Results/GH1_precipitation_test_calculated_EPS.csv")
+```
+
+#proceed to correct for extraction mass and soil moisture.
+
+#rename samples:
+```{r}
+GH1_quantified_EPS <- EPS_data_calculation
+GH1_quantified_EPS <- rename(GH1_quantified_EPS, GH1_ID = SampleID)
+```
+
+#import/rename GH1 metadata - sample names for joining, sample mass:
+```{r}
+GH1_sample_mass <- read_csv("EPS_Method_Manuscript_Data/GH1_datasheets_metadata.csv")
+GH1_sample_mass <- rename(GH1_sample_mass, GH1_ID = Tube_Labels)
+```
+
+#import/rename GH1 metadata - soil moisture:
+```{r}
+GH1_sample_mass <- rename(GH1_sample_mass, PerCMoisture = "Grav. Moisture %")
+GH1_sample_mass <- rename(GH1_sample_mass, FM_Soil_Mass_g = "EPS Mass (g)")
+```
+
+#subset GH1 metadata:
+```{r}
+GH1_sample_mass <- select(GH1_sample_mass, Bag_Labels, GH1_ID, FM_Soil_Mass_g, PerCMoisture)
+```
+
+#join datasets:
+```{r}
+GH1_quantified_EPS <- left_join(GH1_quantified_EPS, GH1_sample_mass)
+```
+
+#Calculate oven dry soil mass equivalent:
+```{r}
+GH1_quantified_EPS <- mutate(GH1_quantified_EPS, soilmassOD = FM_Soil_Mass_g - (FM_Soil_Mass_g*(PerCMoisture/100)))
+```
+
+#Correct EPS for moisture:
+```{r}
+GH1_quantified_EPS <- mutate(GH1_quantified_EPS, glu_g_OD = glu_ug_mL/soilmassOD)
+```
+
+#Correct EPS for extraction volume (4 mL):
+```{r}
+GH1_quantified_EPS <- mutate(GH1_quantified_EPS, EPS_ug_glu_g_soil = glu_g_OD * 4)
+```
+
+#Correct EPS for precipitation factor (2 mL extraction solution to 500 uL re-solubilized precipitate):
+```{r}
+GH1_quantified_EPS <- mutate(GH1_quantified_EPS, EPS_ug_glu_g_soil_precip_corr = EPS_ug_glu_g_soil/4)
+```
+
+#Correct EPS for dilution factor:
+```{r}
+GH1_quantified_EPS <- mutate(GH1_quantified_EPS, EPS_ug_glu_g_soil_dilution_corr = EPS_ug_glu_g_soil_precip_corr/Dilution_Factor)
+```
+
+#These would be the final values to compare with the extract values.
+
+#Test the comparison:
+
+#Load calculated GH1 EPS:
+```{r}
+GH1_calculated_EPS <- read_csv("EPS_Method_Manuscript_Data/GH1_quantified_EPS_ug_glucose_g_soil.csv")
+GH1_calculated_EPS$Bag_Labels <- as.character(GH1_calculated_EPS$Bag_Labels)
+GH1_calculated_EPS <- rename(GH1_calculated_EPS, EPS_ug_glu_g_soil_extract = EPS_ug_glu_g_soil)
+```
+
+#join:
+```{r}
+GH1_quantified_EPS <- left_join(GH1_quantified_EPS, GH1_calculated_EPS)
+```
+
+#export for later use:
+```{r}
+write_csv(GH1_quantified_EPS, "Results/GH1_EPS_extract_precipitate_comparison.csv")
+```
+
+#Visualize the scatter here, first assuming a linear relationship:
+```{r}
+EPS_test <- ggplot(GH1_quantified_EPS, aes(x = EPS_ug_glu_g_soil_extract, y = EPS_ug_glu_g_soil_dilution_corr)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  theme_classic()
+```
+
+#use this conservative dataset for now.
+
+#plot extract vs. precipitate EPS concentrations:
+```{r}
+EPS_test <- ggplot(GH1_quantified_EPS, aes(x = EPS_ug_glu_g_soil_extract, y = EPS_ug_glu_g_soil_dilution_corr)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  labs(x = "Extract EPS (µg glucose/g soil)", y = "Precipitate EPS (µg glucose/g soil)") +
+  xlim(0, 420) +
+  theme_classic() +
+  theme(text = element_text(size = 12))
+
+EPS_test
+
+#print:
+pdf(file = "Figures_Tables/Figure_3.pdf",
+    width = 5, # The width of the plot in inches
+    height = 3) # The height of the plot in inches
+print(EPS_test)
+dev.off()
+```
+
+#statistics:
+```{r}
+model <- lm(GH1_quantified_EPS$EPS_ug_glu_g_soil_dilution_corr ~ GH1_quantified_EPS$EPS_ug_glu_g_soil_extract)
+
+model_coef <- coef(model)
+
+model_coef
+
+summary(model)
+```
+
+#If we had even one more of the corrected ones on the high end, I would be more comfortable using this.
+
+#I DO think this shows that those high values are real - as real as can get with the method. Glucose is NOT predicted to precipitate using this method; we were careful.
+
+#Can we get some more data here? What was the precipitate vs. extract pigment factor on that highest point?
+```{r}
+pigment_precipitate_test_sort <- select(pigment_precipitate_test, SampleID, precipitation_factor)
+pigment_precipitate_test_sort[order(pigment_precipitate_test_sort$precipitation_factor),]
+```
+
+#Compare with our values:
+```{r}
+GH1_quantified_EPS_sort <- select(GH1_quantified_EPS, GH1_ID, EPS_ug_glu_g_soil_dilution_corr)
+GH1_quantified_EPS_sort[order(GH1_quantified_EPS_sort$EPS_ug_glu_g_soil_dilution_corr),]
+```
+
+#Indeed, if you look at our top 3, we have pigment factors of 3.45, 3.64, 3.74. Average = 3.61
+
+#what is the highest-concentration sample for which this is not true? Sample 111, at 64.0.
+
+#So it seems like you could apply this pigment factor of about 3.6 to all precipitated samples we had to dilute to quantify. Of course, this could be a coincidence, with our sample size of three.
+
+#Let's apply this average pigment correction factor to some more samples we precipitated, and add those values in.
+
+#code the avg pigment factor:
+```{r}
+pigment_factor = 3.61
+```
+
+#select 'extract' (as opposed to pigment) samples:
+```{r}
+extract_only <- filter(GH1_EPS_test, Assay == "Extract")
+```
+
+#Add pigment correction factors:
+```{r}
+extract_only <- left_join(extract_only, pigment_precipitate)
+```
+
+#Remove blanks, standards:
+```{r}
+extract_only <- filter(extract_only, SampleID != "Blank")
+extract_only <- filter(extract_only, SampleID != "#5")
+```
+
+#Manually remove some samples without predictable pigment corrections:
+```{r}
+extract_only <- filter(extract_only, SampleID != "GH1_045")
+extract_only <- filter(extract_only, SampleID != "GH1_012")
+extract_only <- filter(extract_only, SampleID != "GH1_093")
+```
+
+#select samples to which pigment correction factors need to be added:
+```{r}
+calculate_precipitated_pigments_1 <- filter(extract_only, ABS_pigment_precipitate > 0)
+calculate_precipitated_pigments_2 <- setdiff(extract_only, calculate_precipitated_pigments_1)
+```
+
+#join GH1 extract pigment values:
+```{r}
+calculate_precipitated_pigments_2 <- left_join(calculate_precipitated_pigments_2, pigment_extract)
+```
+
+#Calculate theoretic pigment values from average correction factor:
+```{r}
+calculate_precipitated_pigments_2 <- mutate(calculate_precipitated_pigments_2, ABS_pigment_precipitate = ABS_pigment_extract * pigment_factor)
+```
+
+#remove added variable:
+```{r}
+calculate_precipitated_pigments_2 <- select(calculate_precipitated_pigments_2, -ABS_pigment_extract)
+```
+
+#re-combine precipitate test variables, now with imputed pigments:
+```{r}
+extract_only <- bind_rows(calculate_precipitated_pigments_1, calculate_precipitated_pigments_2)
+```
+
+#calculate and rename ABS:
+```{r}
+extract_only <- mutate(extract_only, ABS_extract = (Abs1 + Abs2)/2)
+```
+
+#average duplicates:
+```{r}
+extract_only_avg <- extract_only %>%
+  group_by(SampleID) %>%
+  summarise_at(vars(ABS_extract),
+               list(ABS_extract_avg = mean))
+
+extract_only <- left_join(extract_only, extract_only_avg, by = "SampleID")
+
+extract_only <- select(extract_only, SampleID, Dilution_Factor, ABS_pigment_precipitate, ABS_extract_avg)
+extract_only <- unique(extract_only)
+```
+
+#correct pigment for dilution factor:
+```{r}
+EPS_data_calculation <- mutate(extract_only, diluted_pigment = ABS_pigment_precipitate * Dilution_Factor )
+```
+
+#subtract pigment ABS from extract ABS to get final corrected ABS:
+```{r}
+EPS_data_calculation <- mutate(EPS_data_calculation, ABS = ABS_extract_avg - diluted_pigment)
+EPS_data_calculation <- select(EPS_data_calculation, SampleID, ABS, Dilution_Factor)
+```
+
+#calculate final glucose concentrations with coreect standard curve fpr these samples:
+```{r}
+intercept <- read_rds("Results/std_curve_intercept.rds")
+slope <- read_rds("Results/std_curve_slope.rds")
+
+EPS_data_calculation <- mutate(EPS_data_calculation, glu_ug_mL = (ABS - intercept)/slope)
+```
+
+#Final numbers need to be corrected for the actual extraction mass, soil moisture.
+
+#Export:
+```{r}
+write_csv(EPS_data_calculation, "Results/GH1_precipitation_test_calculated_EPS_imputed_pigments.csv")
+```
+
+#proceed to correct for extraction mass and soil moisture.
+
+#rename samples:
+```{r}
+GH1_quantified_EPS <- EPS_data_calculation
+GH1_quantified_EPS <- rename(GH1_quantified_EPS, GH1_ID = SampleID)
+```
+
+#import/rename GH1 metadata - sample names for joining, sample mass:
+```{r}
+GH1_sample_mass <- read_csv("EPS_Method_Manuscript_Data/GH1_datasheets_metadata.csv")
+GH1_sample_mass <- rename(GH1_sample_mass, GH1_ID = Tube_Labels)
+```
+
+#import/rename GH1 metadata - soil moisture:
+```{r}
+GH1_sample_mass <- rename(GH1_sample_mass, PerCMoisture = "Grav. Moisture %")
+GH1_sample_mass <- rename(GH1_sample_mass, FM_Soil_Mass_g = "EPS Mass (g)")
+```
+
+#subset GH1 metadata:
+```{r}
+GH1_sample_mass <- select(GH1_sample_mass, Bag_Labels, GH1_ID, FM_Soil_Mass_g, PerCMoisture)
+```
+
+#join datasets:
+```{r}
+GH1_quantified_EPS <- left_join(GH1_quantified_EPS, GH1_sample_mass)
+```
+
+#Calculate oven dry soil mass equivalent:
+```{r}
+GH1_quantified_EPS <- mutate(GH1_quantified_EPS, soilmassOD = FM_Soil_Mass_g - (FM_Soil_Mass_g*(PerCMoisture/100)))
+```
+
+#Correct EPS for moisture:
+```{r}
+GH1_quantified_EPS <- mutate(GH1_quantified_EPS, glu_g_OD = glu_ug_mL/soilmassOD)
+```
+
+#Correct EPS for extraction volume (4 mL):
+```{r}
+GH1_quantified_EPS <- mutate(GH1_quantified_EPS, EPS_ug_glu_g_soil = glu_g_OD * 4)
+```
+
+#Correct EPS for precipitation factor (2 mL extraction solution to 500 uL re-solubilized precipitate):
+```{r}
+GH1_quantified_EPS <- mutate(GH1_quantified_EPS, EPS_ug_glu_g_soil_precip_corr = EPS_ug_glu_g_soil/4)
+```
+
+#Correct EPS for dilution factor:
+```{r}
+GH1_quantified_EPS <- mutate(GH1_quantified_EPS, EPS_ug_glu_g_soil_dilution_corr = EPS_ug_glu_g_soil_precip_corr/Dilution_Factor)
+```
+
+#These would be the final values to compare with the extract values.
+
+#Test the comparison:
+
+#Load calculated GH1 EPS:
+```{r}
+GH1_calculated_EPS <- read_csv("EPS_Method_Manuscript_Data//GH1_quantified_EPS_ug_glucose_g_soil.csv")
+GH1_calculated_EPS$Bag_Labels <- as.character(GH1_calculated_EPS$Bag_Labels)
+GH1_calculated_EPS <- rename(GH1_calculated_EPS, EPS_ug_glu_g_soil_extract = EPS_ug_glu_g_soil)
+```
+
+#join:
+```{r}
+GH1_quantified_EPS <- left_join(GH1_quantified_EPS, GH1_calculated_EPS)
+```
+
+#Visualize the scatter here, first assuming a linear relationship:
+```{r}
+EPS_test <- ggplot(GH1_quantified_EPS, aes(x = EPS_ug_glu_g_soil_extract, y = EPS_ug_glu_g_soil_dilution_corr)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  labs(title = "EPS Precipitate Test", subtitle = "R^2 = 0.88") +
+  xlab("Extract EPS (µg glucose/g soil)") +
+  ylab("Precipitate EPS (µg glucose/g soil)") +
+  theme_classic()
+
+EPS_test
+
+#print:
+pdf(file = "Figures_Tables/Imputed_Pigments.pdf",
+    width = 5, # The width of the plot in inches
+    height = 3) # The height of the plot in inches
+print(EPS_test)
+dev.off()
+```
+
+#What are the model statistics?
+```{r}
+model <- lm(EPS_ug_glu_g_soil_dilution_corr ~ EPS_ug_glu_g_soil_extract, data = GH1_quantified_EPS)
+summary(model)
+```
+
+#So - using imputed pigment values confirms the basic relationship seen using only actual pigment values, but changes the slope and lowers the R2, seemingly due to the 2 surprisingly low values around 150 ug/g extract EPS.
+
+#given that these values are based on guesses at what the pigment ABS might have been, the most conservative thing would be to use the smaller dataset where we really did correct for pigment ABS.
+
+#though note, that now the intercept does not statistically differ from 0, which implies that this relationship may better reflect reality.
+
+#in a future study, would likely start by quantifying 1/2 of extracts and precipitates from a subset range to show that the correction was valid to that study, or skip to precipitates and not bother with extracts at all to be most conservative; inlcuing worse quality data that change the slope of the relationship in this study seems inadvisable.
+
+### end of document.
